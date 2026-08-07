@@ -1,0 +1,16 @@
+{
+  // Dùng TypeScript của workspace (v5.2.2) thay vì built-in của VS Code
+  "typescript.tsdk": "client/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // Tắt validation JSON cho tsconfig để tránh false-positive từ built-in schema cũ
+  "json.schemaDownload.enable": true,
+
+  // Tắt lỗi ESLint nếu không có config
+  "eslint.enable": false,
+
+  // Editor settings
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "files.eol": "\n"
+}

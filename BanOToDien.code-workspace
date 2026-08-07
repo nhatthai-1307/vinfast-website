@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "name": "🎨 Frontend (Client - React + Vite)",
+      "path": "client"
+    },
+    {
+      "name": "⚙️ Backend (Server - Express + Node)",
+      "path": "server"
+    },
+    {
+      "name": "📁 Gốc Dự Án (Root)",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "client/node_modules/typescript/lib",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  }
+}

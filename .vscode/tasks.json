@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "🚀 Chạy Toàn Bộ Dự Án (Client + Server)",
+      "detail": "Khởi động đồng thời cả Backend API (port 5000) và Frontend React (port 5173)"
+    }
+  ]
+}
