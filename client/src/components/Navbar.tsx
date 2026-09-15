@@ -56,10 +56,12 @@ export default function Navbar() {
   ];
 
   const carMenu = [
-    { name: 'VF 3', label: 'Mini EV', price: 'Từ 235 tr', color: 'bg-sky-100 text-sky-700' },
-    { name: 'VF 5', label: 'A-SUV',   price: 'Từ 458 tr', color: 'bg-blue-100 text-blue-700' },
-    { name: 'VF 7', label: 'C-SUV',   price: 'Từ 850 tr', color: 'bg-indigo-100 text-indigo-700' },
-    { name: 'VF 9', label: 'E-SUV',   price: 'Từ 1.47 tỷ', color: 'bg-violet-100 text-violet-700' },
+    { name: 'VF 3', slug: 'vf-3', label: 'Mini EV', price: 'Từ 322 tr', color: 'bg-sky-100 text-sky-700' },
+    { name: 'VF 5', slug: 'vf-5', label: 'A-SUV',   price: 'Từ 468 tr', color: 'bg-blue-100 text-blue-700' },
+    { name: 'VF 6', slug: 'vf-6', label: 'B-SUV',   price: 'Từ 675 tr', color: 'bg-teal-100 text-teal-700' },
+    { name: 'VF 7', slug: 'vf-7', label: 'C-SUV',   price: 'Từ 850 tr', color: 'bg-indigo-100 text-indigo-700' },
+    { name: 'VF 8', slug: 'vf-8', label: 'D-SUV',   price: 'Từ 1.09 tỷ', color: 'bg-amber-100 text-amber-700' },
+    { name: 'VF 9', slug: 'vf-9', label: 'E-SUV',   price: 'Từ 1.56 tỷ', color: 'bg-violet-100 text-violet-700' },
   ];
 
   const active = (path: string) => location.pathname === path;
@@ -92,7 +94,7 @@ export default function Navbar() {
               <button
                 onClick={() => { setCarsOpen(o => !o); setProfileOpen(false); }}
                 className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  active('/cars')
+                  active('/cars') || location.pathname.startsWith('/cars/')
                     ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
@@ -103,13 +105,13 @@ export default function Navbar() {
               </button>
 
               {carsOpen && (
-                <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-slate-100 shadow-2xl shadow-slate-200/80 p-3 z-50 animate-fadeInUp">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Chọn dòng xe</p>
+                <div className="absolute top-full left-0 mt-2 w-96 bg-white rounded-2xl border border-slate-100 shadow-2xl shadow-slate-200/80 p-3 z-50 animate-fadeInUp">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Chọn dòng xe để xem chi tiết</p>
                   <div className="grid grid-cols-2 gap-2">
                     {carMenu.map((item) => (
                       <Link
                         key={item.name}
-                        to="/cars"
+                        to={`/cars/${item.slug}`}
                         onClick={() => setCarsOpen(false)}
                         className="flex flex-col gap-1 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group"
                       >

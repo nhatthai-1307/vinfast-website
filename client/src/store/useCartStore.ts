@@ -6,7 +6,7 @@ interface BookingState {
   orderType: 'deposit' | 'full-purchase'; // ĐẶT CỌC hoặc MUA NGAY
   purchaseOption: 'buy-battery' | 'rent-battery';
   paymentMethod: 'full-payment' | 'installment';
-  paymentGateway: 'vnpay' | 'momo' | 'bank-transfer'; // Cổng thanh toán
+  paymentGateway: 'bank-transfer' | 'momo' | 'vnpay'; // Cổng thanh toán
   installmentDetails: {
     prepaidPercent: number;
     months: number;
@@ -20,7 +20,7 @@ interface BookingState {
   setOrderType: (type: 'deposit' | 'full-purchase') => void;
   setPurchaseOption: (option: 'buy-battery' | 'rent-battery') => void;
   setPaymentMethod: (method: 'full-payment' | 'installment') => void;
-  setPaymentGateway: (gw: 'vnpay' | 'momo' | 'bank-transfer') => void;
+  setPaymentGateway: (gw: 'bank-transfer' | 'momo' | 'vnpay') => void;
   setInstallmentDetails: (details: any) => void;
   setShowroom: (showroom: string) => void;
   setDepositAmount: (amount: number) => void;
@@ -33,7 +33,7 @@ export const useCartStore = create<BookingState>((set) => ({
   orderType: 'deposit',
   purchaseOption: 'rent-battery',
   paymentMethod: 'full-payment',
-  paymentGateway: 'vnpay',
+  paymentGateway: 'bank-transfer',
   installmentDetails: {
     prepaidPercent: 20,
     months: 60,
@@ -66,7 +66,7 @@ export const useCartStore = create<BookingState>((set) => ({
       orderType: 'deposit',
       purchaseOption: 'rent-battery',
       paymentMethod: 'full-payment',
-      paymentGateway: 'vnpay',
+      paymentGateway: 'bank-transfer',
       installmentDetails: { prepaidPercent: 20, months: 60, bank: 'BIDV' },
       showroom: 'VinFast Showroom Landmark 81, TP.HCM',
       depositAmount: 10000000,

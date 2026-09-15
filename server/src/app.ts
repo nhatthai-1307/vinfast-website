@@ -15,7 +15,9 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import rentalRouter from './routes/rentalRoutes';
 import uploadRouter from './routes/uploadRoutes';
 import promotionRoutes from './routes/promotionRoutes';
-
+import aiRoutes from './routes/aiRoutes';
+import userRoutes from './routes/userRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 
 // Import Error Handler
 import { errorHandler } from './middleware/error';
@@ -52,13 +54,17 @@ app.use('/api/', limiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/test-drives', testDriveRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/upload', uploadRouter);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/users', userRoutes);
+
 // Đảm bảo thư mục uploads tồn tại
-const uploadsDir = path.resolve(__dirname, '../../uploads');
+const uploadsDir = path.resolve(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }

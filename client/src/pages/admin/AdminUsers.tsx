@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Users, ShieldCheck, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, ShieldCheck, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 
@@ -11,36 +11,11 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Reuse /api/auth/... but we need a dedicated users endpoint
-      // Using orders to get user list (as a workaround since we have customer data)
-      const res = await api.get('/orders');
-      // Extract unique customers
-      const uniqueUsers = new Map();
-      res.data.orders.forEach((ord: any) => {
-        if (ord.user && !uniqueUsers.has(ord.user._id || ord.user)) {
-          uniqueUsers.set(ord.user._id || ord.user, {
-            _id: ord.user._id || ord.user,
-            name: ord.customerInfo?.name,
-            email: ord.customerInfo?.email,
-            phone: ord.customerInfo?.phone,
-            role: 'customer',
-            ordersCount: 1,
-          });
-        } else if (ord.user) {
-          const existing = uniqueUsers.get(ord.user._id || ord.user);
-          if (existing) existing.ordersCount += 1;
-        }
-      });
-      
-      // Also fetch all users from a users endpoint if you add one
-      setUsers(Array.from(uniqueUsers.values()));
+      const res = await api.get('/users');
+      setUsers(res.data.users || []);
     } catch (err) {
-      // Fallback: show demo users
-      setUsers([
-        { _id: '1', name: 'VinFast Admin System', email: 'admin@gmail.com', phone: '0988777999', role: 'admin', ordersCount: 0 },
-        { _id: '2', name: 'Nguyễn Văn Tư Vấn', email: 'staff@gmail.com', phone: '0912345678', role: 'staff', ordersCount: 0 },
-        { _id: '3', name: 'Trần Văn Khách Hàng', email: 'user@gmail.com', phone: '0901234567', role: 'customer', ordersCount: 2 },
-      ]);
+      console.error('Error fetching users:', err);
+      toast.error('Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
     }
@@ -50,10 +25,31 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      await api.put(`/users/${userId}/role`, { role: newRole });
+      toast.success('Đã cập nhật vai trò người dùng');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi cập nhật vai trò');
+    }
+  };
+
+  const handleDelete = async (userId: string, userName: string) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa tài khoản "${userName}"?`)) return;
+    try {
+      await api.delete(`/users/${userId}`);
+      toast.success('Đã xóa người dùng');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi xóa người dùng');
+    }
+  };
+
   const getRoleBadge = (role: string) => {
-    if (role === 'admin') return 'bg-red-500/10 text-red-400 border border-red-500/20';
-    if (role === 'staff') return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-    return 'bg-green-500/10 text-green-400 border border-green-500/20';
+    if (role === 'admin') return 'bg-red-50 text-red-600 border border-red-200';
+    if (role === 'staff') return 'bg-blue-50 text-blue-600 border border-blue-200';
+    return 'bg-green-50 text-green-600 border border-green-200';
   };
   const getRoleLabel = (role: string) => {
     if (role === 'admin') return 'Quản trị viên';
@@ -70,7 +66,7 @@ export default function AdminUsers() {
           <h2 className="text-xl font-extrabold flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-600" /> QUẢN LÝ NGƯỜI DÙNG
           </h2>
-          <p className="text-xs text-gray-500 mt-1">Danh sách khách hàng và nhân viên trong hệ thống VinFast.</p>
+          <p className="text-xs text-gray-500 mt-1">Tổng cộng {users.length} tài khoản trong hệ thống.</p>
         </div>
         <select
           value={filterRole}
@@ -86,16 +82,16 @@ export default function AdminUsers() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border border-gray-100 p-4 rounded-xl text-center">
-          <p className="text-xl font-extrabold text-gray-900">{users.filter(u => u.role === 'admin').length}</p>
+        <div className="bg-white border border-gray-100 p-4 rounded-xl text-center shadow-sm">
+          <p className="text-xl font-extrabold text-red-600">{users.filter(u => u.role === 'admin').length}</p>
           <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">Quản trị viên</p>
         </div>
-        <div className="bg-white border border-gray-100 p-4 rounded-xl text-center">
-          <p className="text-xl font-extrabold text-gray-900">{users.filter(u => u.role === 'staff').length}</p>
+        <div className="bg-white border border-gray-100 p-4 rounded-xl text-center shadow-sm">
+          <p className="text-xl font-extrabold text-blue-600">{users.filter(u => u.role === 'staff').length}</p>
           <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">Nhân viên tư vấn</p>
         </div>
-        <div className="bg-white border border-gray-100 p-4 rounded-xl text-center">
-          <p className="text-xl font-extrabold text-gray-900">{users.filter(u => u.role === 'customer').length}</p>
+        <div className="bg-white border border-gray-100 p-4 rounded-xl text-center shadow-sm">
+          <p className="text-xl font-extrabold text-green-600">{users.filter(u => u.role === 'customer').length}</p>
           <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">Khách hàng</p>
         </div>
       </div>
@@ -110,39 +106,71 @@ export default function AdminUsers() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 border-b border-gray-100 uppercase text-[10px]">
+                  <th className="px-5 py-4">#</th>
                   <th className="px-5 py-4">Người dùng</th>
                   <th className="px-5 py-4">Email</th>
                   <th className="px-5 py-4">Điện thoại</th>
                   <th className="px-5 py-4">Vai trò</th>
                   <th className="px-5 py-4 text-center">Đơn cọc</th>
+                  <th className="px-5 py-4">Ngày đăng ký</th>
+                  <th className="px-5 py-4 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-12 text-gray-400">
+                    <td colSpan={8} className="text-center py-12 text-gray-400">
                       Không có người dùng nào.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((u, idx) => (
                     <tr key={u._id || idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-4 text-gray-400 font-mono">{idx + 1}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-sm font-bold">
                             {u.name?.[0]?.toUpperCase() || 'U'}
                           </div>
-                          <span className="text-gray-900 font-semibold">{u.name}</span>
+                          <div>
+                            <span className="text-gray-900 font-semibold block">{u.name}</span>
+                            {u.isEmailConfirmed && (
+                              <span className="text-[9px] text-green-500 font-medium">✓ Đã xác thực</span>
+                            )}
+                            {!u.isEmailConfirmed && (
+                              <span className="text-[9px] text-orange-500 font-medium">⏳ Chưa xác thực</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-5 py-4 text-gray-600">{u.email}</td>
-                      <td className="px-5 py-4 text-gray-600">{u.phone}</td>
+                      <td className="px-5 py-4 text-gray-600">{u.phone || '—'}</td>
                       <td className="px-5 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${getRoleBadge(u.role)}`}>
-                          {getRoleLabel(u.role)}
-                        </span>
+                        <select
+                          value={u.role}
+                          onChange={(e) => handleRoleChange(u._id, e.target.value)}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer focus:outline-none ${getRoleBadge(u.role)}`}
+                        >
+                          <option value="customer">Khách hàng</option>
+                          <option value="staff">Nhân viên</option>
+                          <option value="admin">Quản trị viên</option>
+                        </select>
                       </td>
                       <td className="px-5 py-4 text-center text-gray-900 font-bold">{u.ordersCount || 0}</td>
+                      <td className="px-5 py-4 text-gray-500 text-[11px]">
+                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        {u.role !== 'admin' && (
+                          <button
+                            onClick={() => handleDelete(u._id, u.name)}
+                            className="text-red-400 hover:text-red-600 transition-colors p-1 rounded hover:bg-red-50"
+                            title="Xóa người dùng"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

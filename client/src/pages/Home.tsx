@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -108,9 +108,9 @@ export default function Home() {
               {/* Main image card */}
               <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-blue-200/50">
                 <img
-                  src="https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=900&q=85"
-                  alt="VinFast EV"
-                  className="w-full h-[460px] object-cover"
+                  src="/assets/cars/hero_vinfast.jpg"
+                  alt="VinFast VF 8 Electric SUV"
+                  className="w-full h-[460px] object-cover hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent" />
               </div>

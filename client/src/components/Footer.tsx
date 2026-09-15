@@ -65,11 +65,18 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-widest">Dòng xe</h4>
             <ul className="space-y-2.5 text-sm">
-              {['VF 3 — Mini EV', 'VF 5 — A-SUV', 'VF 6 — B-SUV', 'VF 7 — C-SUV', 'VF 8 & VF 9 — D/E-SUV'].map((item) => (
-                <li key={item}>
-                  <Link to="/cars" className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1.5 group">
+              {[
+                { name: 'VinFast VF 3 — Mini EV', path: '/cars/vf-3' },
+                { name: 'VinFast VF 5 Plus — A-SUV', path: '/cars/vf-5' },
+                { name: 'VinFast VF 6 — B-SUV', path: '/cars/vf-6' },
+                { name: 'VinFast VF 7 — C-SUV', path: '/cars/vf-7' },
+                { name: 'VinFast VF 8 — D-SUV', path: '/cars/vf-8' },
+                { name: 'VinFast VF 9 — E-SUV', path: '/cars/vf-9' },
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link to={item.path} className="text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1.5 group">
                     <span className="w-1 h-1 rounded-full bg-gray-600 group-hover:bg-blue-400 transition-colors"></span>
-                    {item}
+                    {item.name}
                   </Link>
                 </li>
               ))}

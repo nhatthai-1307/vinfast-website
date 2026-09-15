@@ -29,7 +29,7 @@ const upload = multer({ storage });
 router.post('/', upload.array('images', 20), (req: Request, res: Response) => {
   try {
     const files = req.files as Express.Multer.File[];
-    const urls = files.map((file) => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+    const urls = files.map((file) => `/uploads/${file.filename}`);
     res.json({ success: true, urls });
   } catch (err) {
     console.error(err);

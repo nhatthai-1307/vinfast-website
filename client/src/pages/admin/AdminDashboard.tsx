@@ -1,11 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Users, Car, ShoppingCart, Calendar, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, Car, ShoppingCart, Calendar, TrendingUp, DollarSign, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 const COLORS = ['#103F91', '#00F2FE', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [charts, setCharts] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -42,49 +44,64 @@ export default function AdminDashboard() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   };
 
+  // KPI Card data
+  const kpiCards = [
+    {
+      label: 'Tổng doanh thu cọc',
+      value: formatCurrency(stats?.totalDepositRevenue || 0),
+      icon: DollarSign,
+      iconBg: 'bg-green-500/15 border-green-500/25',
+      iconColor: 'text-green-500',
+      link: '/admin/orders',
+    },
+    {
+      label: 'Đơn đặt cọc xe',
+      value: `${stats?.totalOrders || 0} đơn`,
+      icon: ShoppingCart,
+      iconBg: 'bg-blue-50 border-blue-500/25',
+      iconColor: 'text-blue-600',
+      link: '/admin/orders',
+    },
+    {
+      label: 'Khách hàng đăng ký',
+      value: `${stats?.totalUsers || 0} tài khoản`,
+      icon: Users,
+      iconBg: 'bg-purple-500/15 border-purple-500/25',
+      iconColor: 'text-purple-500',
+      link: '/admin/users',
+    },
+    {
+      label: 'Yêu cầu lái thử',
+      value: `${stats?.totalTestDrives || 0} lượt hẹn`,
+      icon: Calendar,
+      iconBg: 'bg-yellow-500/15 border-yellow-500/25',
+      iconColor: 'text-yellow-500',
+      link: '/admin/test-drives',
+    },
+  ];
+
   return (
     <div className="space-y-8 text-gray-900">
       {/* 1. KPIs Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white border border-gray-100 p-6 rounded-2xl flex items-center justify-between shadow-md">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-500 font-bold uppercase block">Tổng doanh thu cọc</span>
-            <span className="text-xl font-extrabold text-gray-900">{formatCurrency(stats?.totalDepositRevenue || 0)}</span>
+        {kpiCards.map((card) => (
+          <div
+            key={card.label}
+            onClick={() => navigate(card.link)}
+            className="bg-white border border-gray-100 p-6 rounded-2xl flex items-center justify-between shadow-md cursor-pointer hover:shadow-lg hover:border-blue-200 hover:-translate-y-0.5 transition-all duration-200 group"
+          >
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-500 font-bold uppercase block">{card.label}</span>
+              <span className="text-xl font-extrabold text-gray-900">{card.value}</span>
+              <span className="text-[10px] text-blue-500 font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                Xem chi tiết <ChevronRight className="w-3 h-3" />
+              </span>
+            </div>
+            <div className={`w-12 h-12 ${card.iconBg} border rounded-xl flex items-center justify-center ${card.iconColor}`}>
+              <card.icon className="w-6 h-6" />
+            </div>
           </div>
-          <div className="w-12 h-12 bg-green-500/15 border border-green-500/25 rounded-xl flex items-center justify-center text-green-400">
-            <DollarSign className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-100 p-6 rounded-2xl flex items-center justify-between shadow-md">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-500 font-bold uppercase block">Đơn đặt cọc xe</span>
-            <span className="text-xl font-extrabold text-gray-900">{stats?.totalOrders || 0} đơn</span>
-          </div>
-          <div className="w-12 h-12 bg-blue-50 border border-vinfast-blue/25 rounded-xl flex items-center justify-center text-blue-600">
-            <ShoppingCart className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-100 p-6 rounded-2xl flex items-center justify-between shadow-md">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-500 font-bold uppercase block">Khách hàng đăng ký</span>
-            <span className="text-xl font-extrabold text-gray-900">{stats?.totalUsers || 0} tài khoản</span>
-          </div>
-          <div className="w-12 h-12 bg-purple-500/15 border border-purple-500/25 rounded-xl flex items-center justify-center text-purple-400">
-            <Users className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-100 p-6 rounded-2xl flex items-center justify-between shadow-md">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-500 font-bold uppercase block">Yêu cầu lái thử</span>
-            <span className="text-xl font-extrabold text-gray-900">{stats?.totalTestDrives || 0} lượt hẹn</span>
-          </div>
-          <div className="w-12 h-12 bg-yellow-500/15 border border-yellow-500/25 rounded-xl flex items-center justify-center text-yellow-400">
-            <Calendar className="w-6 h-6" />
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* 2. Recharts Area & Pie charts */}

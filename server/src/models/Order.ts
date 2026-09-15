@@ -53,6 +53,15 @@ const OrderSchema = new Schema(
       enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
+    vnpayTransactionId: {
+      type: String,
+    },
+    vnpayBankCode: {
+      type: String,
+    },
+    vnpayPayDate: {
+      type: String,
+    },
     orderStatus: {
       type: String,
       enum: ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'],

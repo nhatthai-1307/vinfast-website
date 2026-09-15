@@ -9,12 +9,23 @@ import sendEmail from '../utils/sendEmail';
 // @access  Private/Public (allow booking with or without account, but link if logged in)
 export const createOrder = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { customerInfo, carId, selectedColor, purchaseOption, paymentMethod, installmentDetails, showroom, depositAmount } = req.body;
+    const {
+      customerInfo,
+      carId,
+      car: carParam,
+      selectedColor,
+      purchaseOption,
+      paymentMethod,
+      installmentDetails,
+      showroom,
+      depositAmount,
+    } = req.body;
 
-    const car = await Car.findById(carId);
+    const targetCarId = carId || carParam;
+    const car = await Car.findById(targetCarId);
     if (!car) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy dòng xe cần đặt cọc' });
-    }
+    } 
 
     if (car.stock <= 0) {
       return res.status(400).json({ success: false, message: 'Rất tiếc, dòng xe này hiện đã hết hàng trong kho' });
@@ -26,11 +37,11 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
     const orderData: any = {
       orderNumber,
       customerInfo,
-      car: carId,
-      selectedColor,
-      purchaseOption,
-      paymentMethod,
-      showroom,
+      car: targetCarId,
+      selectedColor: selectedColor || (car.colors && car.colors[0]?.name) || 'Tiêu chuẩn',
+      purchaseOption: purchaseOption || 'rent-battery',
+      paymentMethod: paymentMethod === 'installment' ? 'installment' : 'full-payment',
+      showroom: showroom || 'VinFast Showroom Landmark 81, TP.HCM',
       depositAmount: depositAmount || 10000000,
       paymentStatus: 'paid', // Mark paid for simulation purposes
     };
@@ -101,12 +112,16 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
       </div>
     `;
 
-    await sendEmail({
-      email: customerInfo.email,
-      subject: emailSubject,
-      message: `Cảm ơn bạn đã đặt cọc xe VinFast ${car.name}. Mã đơn hàng: ${orderNumber}. Showroom nhận: ${showroom}.`,
-      html: emailHtml,
-    });
+    try {
+      await sendEmail({
+        email: customerInfo.email,
+        subject: emailSubject,
+        message: `Cảm ơn bạn đã đặt cọc xe VinFast ${car.name}. Mã đơn hàng: ${orderNumber}. Showroom nhận: ${showroom}.`,
+        html: emailHtml,
+      });
+    } catch (mailErr) {
+      console.warn('Không thể gửi email xác nhận đặt cọc:', mailErr);
+    }
 
     // Realtime notification via socket.io
     const io = req.app.get('io');

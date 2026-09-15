@@ -3,3 +3,9 @@
 dist/
 .DS_Store
 *.log
+*.docx
+~$*.docx
+server/uploads/*
+!server/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep

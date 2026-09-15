@@ -17,6 +17,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ProfileDashboard from './pages/ProfileDashboard';
 import CarRental from './pages/CarRental';
+import PaymentResult from './pages/PaymentResult';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="/showrooms" element={<ShowroomsMap />} />
           <Route path="/rental" element={<CarRental />} />
           <Route path="/booking" element={<Booking />} />
+          <Route path="/payment-result" element={<PaymentResult />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/profile" element={<ProfileDashboard />} />
         </Route>
 

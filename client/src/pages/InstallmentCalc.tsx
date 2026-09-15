@@ -1,8 +1,14 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Calculator } from 'lucide-react';
+import { Calculator, ArrowRight, PhoneCall, CheckCircle2 } from 'lucide-react';
+import { useCartStore } from '../store/useCartStore';
+import { toast } from 'react-toastify';
 
 export default function InstallmentCalc() {
+  const navigate = useNavigate();
+  const { setBookingCar, setPaymentMethod, setInstallmentDetails } = useCartStore();
+
   const [cars, setCars] = useState<any[]>([]);
   const [selectedCar, setSelectedCar] = useState<any>(null);
   
@@ -11,6 +17,39 @@ export default function InstallmentCalc() {
   const [prepaidPercent, setPrepaidPercent] = useState(20);
   const [loanMonths, setLoanMonths] = useState(60);
   const [interestRate, setInterestRate] = useState(8); // Annual interest in %
+
+  // Modal states
+  const [showConsultModal, setShowConsultModal] = useState(false);
+  const [consultName, setConsultName] = useState('');
+  const [consultPhone, setConsultPhone] = useState('');
+
+  const handleApplyInstallment = () => {
+    if (!selectedCar) {
+      toast.warning('Vui lòng chọn xe');
+      return;
+    }
+    setBookingCar(selectedCar);
+    setPaymentMethod('installment');
+    setInstallmentDetails({
+      prepaidPercent,
+      months: loanMonths,
+      bank: 'BIDV',
+    });
+    toast.success(`Đã chọn gói trả góp cho ${selectedCar.name}! Đang chuyển đến đặt cọc...`);
+    navigate('/booking');
+  };
+
+  const handleConsultSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!consultName || !consultPhone) {
+      toast.error('Vui lòng nhập đầy đủ họ tên và số điện thoại');
+      return;
+    }
+    setShowConsultModal(false);
+    toast.success(`Cảm ơn ${consultName}! Chuyên viên VinFast sẽ liên hệ số ${consultPhone} trong 15 phút.`);
+    setConsultName('');
+    setConsultPhone('');
+  };
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -170,6 +209,28 @@ export default function InstallmentCalc() {
                 className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
+            {/* Consultation & Loan Application Buttons */}
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <button
+                onClick={handleApplyInstallment}
+                className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 group"
+              >
+                <span>Tiến hành mua trả góp</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              
+              <button
+                onClick={() => setShowConsultModal(true)}
+                className="w-full py-3 px-4 rounded-xl bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold text-xs transition-colors flex items-center justify-center gap-2"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Đăng ký tư vấn hồ sơ vay miễn phí</span>
+              </button>
+              
+              <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+                Hỗ trợ duyệt vay nhanh trong 15 phút qua các ngân hàng đối tác liên kết: BIDV, Vietcombank, Techcombank, VPBank.
+              </p>
+            </div>
           </div>
 
           {/* Right Output Panel (Col span 2) */}
@@ -197,20 +258,29 @@ export default function InstallmentCalc() {
             </div>
 
             {/* Large Monthly Repayment callout */}
-            <div className="bg-blue-600 text-gray-900 p-8 rounded-2xl text-center space-y-2 shadow-md">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900/90">TRẢ GÓP HÀNG THÁNG ƯỚC TÍNH (TRUNG BÌNH)</h3>
-              <p className="text-4xl sm:text-5xl font-black text-gray-900">
+            <div className="bg-blue-600 text-white p-8 rounded-2xl text-center space-y-2 shadow-md">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white/90">TRẢ GÓP HÀNG THÁNG ƯỚC TÍNH (TRUNG BÌNH)</h3>
+              <p className="text-4xl sm:text-5xl font-black text-white">
                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(monthlyPayment)}
                 <span className="text-base font-normal"> / tháng</span>
               </p>
-              <p className="text-[10px] text-gray-900/75 max-w-md mx-auto">
-                * Tính toán dựa trên dư nợ giảm dần đều (PMT). Lãi suất thật tế có thể được điều chỉnh tùy thuộc vào chính sách liên kết của từng ngân hàng tại thời điểm nhận bàn giao xe.
+              <p className="text-[11px] text-white/80 max-w-md mx-auto">
+                * Tính toán dựa trên dư nợ giảm dần đều (PMT). Lãi suất thực tế được áp dụng theo chương trình ưu đãi của ngân hàng tại thời điểm ký kết hợp đồng.
               </p>
             </div>
 
             {/* Breakdown schedule of first 12 months */}
             <div className="space-y-4">
-              <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider">LỊCH TRÌNH TRẢ NỢ CHI TIẾT (12 THÁNG ĐẦU)</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider">LỊCH TRÌNH TRẢ NỢ CHI TIẾT (12 THÁNG ĐẦU)</h3>
+                <button
+                  onClick={handleApplyInstallment}
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3.5 py-1.5 rounded-lg transition-colors"
+                >
+                  <span>Nộp hồ sơ ngay</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
@@ -247,6 +317,87 @@ export default function InstallmentCalc() {
           </div>
         </div>
       </div>
+
+      {/* Consultation Modal */}
+      {showConsultModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-gray-100">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-base">Đăng Ký Tư Vấn Hồ Sơ Vay</h3>
+              </div>
+              <button
+                onClick={() => setShowConsultModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Chuyên viên tài chính VinFast sẽ liên hệ trong vòng 15 phút để tư vấn gói vay ưu đãi nhất cho mẫu xe <strong className="text-gray-900">{selectedCar?.name || 'VinFast'}</strong>.
+            </p>
+
+            <form onSubmit={handleConsultSubmit} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 block mb-1">Họ và tên *</label>
+                <input
+                  type="text"
+                  required
+                  value={consultName}
+                  onChange={(e) => setConsultName(e.target.value)}
+                  placeholder="Nguyễn Văn A"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 block mb-1">Số điện thoại nhận tư vấn *</label>
+                <input
+                  type="tel"
+                  required
+                  value={consultPhone}
+                  onChange={(e) => setConsultPhone(e.target.value)}
+                  placeholder="0912 345 678"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 p-2.5 rounded-lg text-center">
+                  <span className="text-[10px] text-gray-500 block">Số tiền vay</span>
+                  <span className="font-bold text-xs text-blue-600">
+                    {new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(loanAmount)} đ
+                  </span>
+                </div>
+                <div className="bg-gray-50 p-2.5 rounded-lg text-center">
+                  <span className="text-[10px] text-gray-500 block">Thời hạn</span>
+                  <span className="font-bold text-xs text-gray-900">{loanMonths} tháng</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowConsultModal(false)}
+                  className="flex-1 py-2.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm"
+                >
+                  Xác nhận gửi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

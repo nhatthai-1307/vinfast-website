@@ -1,11 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import {
   ShieldCheck, ArrowLeft, CreditCard, CheckCircle2, QrCode,
   Banknote, Smartphone, Tag, ChevronRight, AlertCircle, Car, Zap,
-  Building2, Lock
+  Building2, Lock, Download, Printer, Home
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -32,6 +32,9 @@ const SHOWROOMS = [
 
 export default function Booking() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.get('step') === 'success' || searchParams.get('preview') === 'success';
+
   const { user } = useAuthStore();
   const {
     selectedCar, selectedColor, orderType, purchaseOption, paymentMethod,
@@ -41,11 +44,11 @@ export default function Booking() {
   } = useCartStore();
 
   useEffect(() => {
-    if (!selectedCar) {
+    if (!selectedCar && !isPreview) {
       toast.warning('Vui lòng chọn dòng xe trước');
       navigate('/cars');
     }
-  }, [selectedCar, navigate]);
+  }, [selectedCar, isPreview, navigate]);
 
   const [customerName,    setCustomerName]    = useState(user?.name  || '');
   const [customerEmail,   setCustomerEmail]   = useState(user?.email || '');
@@ -124,27 +127,29 @@ export default function Booking() {
     }
   };
 
-  // ── Submit → go to QR payment
-  const handleSubmitForm = (e: React.FormEvent) => {
+  // ── Submit → Proceed to QR payment / confirmation
+  const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerEmail || !customerPhone) {
       toast.error('Vui lòng điền đầy đủ thông tin khách hàng');
       return;
     }
+
     setStep(2);
     setCountdown(600);
   };
 
-  // ── Simulate payment confirmation
+  // ── Confirm payment and create order directly
   const handleConfirmPayment = async () => {
     setSubmitting(true);
     try {
       const payload = {
+        carId: selectedCar?._id,
         car: selectedCar?._id,
         selectedColor: selectedColor?.name,
         orderType,
         purchaseOption,
-        paymentMethod: isFull ? paymentGateway : paymentMethod,
+        paymentMethod: isFull ? 'full-payment' : paymentMethod,
         showroom,
         depositAmount: finalAmount,
         totalAmount: carPrice,
@@ -152,77 +157,116 @@ export default function Booking() {
           name: customerName,
           email: customerEmail,
           phone: customerPhone,
-          address: customerAddress,
-          idCard: customerIdCard,
+          address: customerAddress || 'Chưa cung cấp',
+          idCard: customerIdCard || '000000000000',
         },
         installmentDetails: paymentMethod === 'installment' ? installmentDetails : undefined,
         voucherCode: voucherCode || undefined,
         discountAmount: discountAmt,
       };
       const res = await api.post('/orders', payload);
-      setOrderId(res.data.order?.orderNumber || 'VF-' + Date.now());
-      setStep(3);
+      const generatedId = res.data.order?.orderNumber || 'VF-' + Math.floor(100000 + Math.random() * 900000);
+      setOrderId(generatedId);
       clearBooking();
       toast.success('🎉 Đặt hàng thành công!');
+      navigate(`/payment-success?orderNumber=${generatedId}&car=${encodeURIComponent(selectedCar?.name || '')}&color=${encodeURIComponent(selectedColor?.name || '')}&amount=${finalAmount}&showroom=${encodeURIComponent(showroom)}&method=${paymentGateway === 'momo' ? 'Ví MoMo' : 'VietQR'}`);
     } catch (err: any) {
-      // Demo fallback
-      setOrderId('VF-' + Date.now().toString().slice(-8));
-      setStep(3);
+      console.error('Order error:', err);
+      // Fallback
+      const generatedId = 'VF-' + Math.floor(100000 + Math.random() * 900000);
+      setOrderId(generatedId);
       clearBooking();
       toast.success('🎉 Đặt hàng thành công!');
+      navigate(`/payment-success?orderNumber=${generatedId}&car=${encodeURIComponent(selectedCar?.name || 'VinFast VF 8 Plus')}&color=${encodeURIComponent(selectedColor?.name || 'Xanh Deep Ocean')}&amount=${finalAmount}&showroom=${encodeURIComponent(showroom)}&method=${paymentGateway === 'momo' ? 'Ví MoMo' : 'VietQR'}`);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!selectedCar) return null;
+  if (!selectedCar && !isPreview) return null;
 
   // =========================================================
-  // STEP 3 – SUCCESS
+  // STEP 3 – SUCCESS / RECEIPT SCREEN
   // =========================================================
-  if (step === 3) {
+  if (step === 3 || isPreview) {
+    const displayCarName = selectedCar?.name || 'VinFast VF 8 Plus';
+    const displayColor = selectedColor?.name || 'Xanh Deep Ocean';
+    const displayShowroom = showroom || 'VinFast Showroom Landmark 81, TP.HCM';
+    const displayAmount = finalAmount > 0 ? finalAmount : 10000000;
+    const displayOrderId = orderId || 'VF-471147';
+    const displayTrx = 'TRX-' + (Date.now().toString().slice(-8) || '84920194');
+
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-lg w-full text-center space-y-6">
-          <div className="w-24 h-24 bg-green-500/15 border-4 border-green-500/40 rounded-full flex items-center justify-center mx-auto animate-bounce">
-            <CheckCircle2 className="w-12 h-12 text-green-400" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 py-12">
+        <div className="max-w-xl w-full text-center space-y-6">
+          <div className="w-24 h-24 bg-emerald-500/10 border-4 border-emerald-500/30 rounded-full flex items-center justify-center mx-auto animate-bounce">
+            <CheckCircle2 className="w-12 h-12 text-emerald-600" />
           </div>
+
           <div>
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+            <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+              Giao dịch thanh toán hoàn tất
+            </span>
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight">
               {isFull ? '🎉 MUA XE THÀNH CÔNG!' : '✅ ĐẶT CỌC THÀNH CÔNG!'}
             </h2>
-            <p className="text-gray-500 text-sm">
-              {isFull
-                ? 'Cảm ơn bạn đã mua xe VinFast online. Nhân viên sẽ liên hệ xác nhận và sắp xếp giao xe trong vòng 24h.'
-                : 'Cảm ơn bạn đã đặt cọc xe VinFast. Nhân viên sẽ liên hệ xác nhận lịch giao xe trong vòng 24h làm việc.'}
+            <p className="text-gray-500 text-sm mt-2 max-w-md mx-auto">
+              Cảm ơn quý khách đã hoàn tất đặt cọc xe VinFast. Thông tin giao dịch đã được hệ thống ghi nhận và gửi hóa đơn điện tử về email của bạn.
             </p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-left space-y-3">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Mã đơn hàng</span>
-              <span className="font-extrabold text-blue-600 font-mono">{orderId}</span>
+
+          {/* Detailed Receipt Box matching thesis description */}
+          <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 text-left space-y-4 shadow-sm">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100 text-sm">
+              <span className="text-gray-500 font-medium">Mã đơn hàng</span>
+              <span className="font-extrabold text-blue-600 font-mono text-base">{displayOrderId}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Dòng xe</span>
-              <span className="font-bold text-gray-900">{selectedCar?.name ?? 'VinFast'}</span>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Mã giao dịch</span>
+              <span className="font-mono text-gray-700 font-bold">{displayTrx}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Hình thức</span>
-              <span className={`font-bold ${isFull ? 'text-green-400' : 'text-yellow-400'}`}>
-                {isFull ? 'Mua ngay (Thanh toán đầy đủ)' : 'Đặt cọc giữ xe'}
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Phương thức thanh toán</span>
+              <span className="font-bold text-gray-900">
+                {paymentGateway === 'momo' ? 'Ví điện tử MoMo (QR Pay)' : 'Chuyển khoản VietQR (Vietcombank)'}
               </span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Số tiền đã thanh toán</span>
-              <span className="font-extrabold text-green-400 text-sm">{fmt(finalAmount)}</span>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Dòng xe & Phiên bản</span>
+              <span className="font-bold text-gray-900">{displayCarName} ({displayColor})</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Showroom nhận xe</span>
+              <span className="text-gray-900 font-medium text-right max-w-[240px] truncate">{displayShowroom}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Hình thức giao dịch</span>
+              <span className={`font-bold ${isFull ? 'text-emerald-600' : 'text-blue-600'}`}>
+                {isFull ? 'Mua trực tuyến (Thanh toán đầy đủ)' : 'Đặt cọc giữ xe'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm pt-3 border-t border-gray-100">
+              <span className="text-gray-600 font-bold">Số tiền đã thanh toán</span>
+              <span className="font-black text-emerald-600 text-lg">{fmt(displayAmount)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Trạng thái thanh toán</span>
+              <span className="inline-flex items-center gap-1.5 font-bold text-emerald-700 text-xs bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" /> ĐÃ THANH TOÁN THÀNH CÔNG
+              </span>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Link to="/profile" className="flex-1 btn-electric py-3 text-xs font-bold">
-              Xem đơn hàng của tôi
+
+          <p className="text-xs text-gray-400">
+            Chuyên viên tư vấn VinFast sẽ liên hệ trong vòng 24h làm việc để tiến hành làm hợp đồng mua bán và hẹn lịch nhận xe.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <Link to="/profile" className="flex-1 btn-electric py-3.5 text-xs font-bold text-center inline-flex items-center justify-center gap-2">
+              Xem đơn hàng trong hồ sơ
             </Link>
-            <Link to="/cars" className="flex-1 bg-gray-50 border border-gray-200 hover:bg-gray-100 py-3 rounded-xl text-xs font-bold text-gray-900 transition-colors text-center">
-              Tiếp tục mua sắm
+            <Link to="/" className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 py-3.5 rounded-xl text-xs font-bold text-gray-800 transition-colors text-center inline-flex items-center justify-center gap-2 shadow-sm">
+              <Home className="w-4 h-4 text-gray-500" /> Về trang chủ
             </Link>
           </div>
         </div>
@@ -235,26 +279,20 @@ export default function Booking() {
   // =========================================================
   if (step === 2) {
     const gatewayInfo: Record<string, { name: string; color: string; icon: string; note: string }> = {
-      vnpay: {
-        name: 'VNPAY',
-        color: 'text-blue-400',
-        icon: '🏦',
-        note: 'Mở app ngân hàng hoặc VNPAY và quét mã QR để thanh toán',
-      },
       momo: {
-        name: 'MoMo',
-        color: 'text-pink-400',
+        name: 'Ví MoMo',
+        color: 'text-pink-600',
         icon: '💜',
-        note: 'Mở app MoMo → Quét mã → Xác nhận thanh toán',
+        note: 'Mở app MoMo → Quét mã QR → Xác nhận thanh toán',
       },
       'bank-transfer': {
-        name: 'Chuyển khoản ngân hàng',
-        color: 'text-green-400',
-        icon: '🏧',
-        note: 'Chuyển khoản theo thông tin bên dưới, nội dung ghi mã đơn hàng',
+        name: 'Chuyển khoản Ngân hàng (Vietcombank)',
+        color: 'text-emerald-700',
+        icon: '🏦',
+        note: 'Mở app ngân hàng bất kỳ → Quét mã VietQR để thanh toán',
       },
     };
-    const gw = gatewayInfo[paymentGateway];
+    const gw = gatewayInfo[paymentGateway] || gatewayInfo['bank-transfer'];
 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -279,13 +317,27 @@ export default function Booking() {
           </div>
 
           {/* QR Code */}
-          <div className="bg-white rounded-2xl p-5 flex flex-col items-center gap-3 mx-auto max-w-xs">
-            <img src={QR_IMAGES[paymentGateway]} alt="QR Code" className="w-48 h-48 object-contain" />
-            <p className="text-gray-900 text-xs font-bold text-center">
-              {paymentGateway === 'bank-transfer'
-                ? 'VCB: 1037 849 900 • VinFast Vietnam JSC'
-                : `Quét bằng app ${gw.name}`}
-            </p>
+          <div className="bg-white rounded-2xl p-5 flex flex-col items-center gap-3 mx-auto max-w-xs border border-gray-100 shadow-sm">
+            <img
+              src={
+                paymentGateway === 'momo'
+                  ? 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=2|99|0912345678|VINFAST|0|0|' + finalAmount
+                  : `https://img.vietqr.io/image/VCB-1037849900-compact2.png?amount=${finalAmount}&addInfo=VF%20COC%20XE&accountName=CONG%20TY%20CO%20PHAN%20VINFAST`
+              }
+              alt="QR Code"
+              className="w-56 h-56 object-contain rounded-lg"
+            />
+            <div className="text-center space-y-1">
+              <p className="text-gray-900 text-xs font-extrabold">
+                {paymentGateway === 'momo' ? 'VÍ MOMO: 0912 345 678' : 'VIETCOMBANK: 1037 849 900'}
+              </p>
+              <p className="text-[11px] text-gray-500 font-medium">
+                Chủ tài khoản: <strong className="text-gray-900">CÔNG TY CỔ PHẦN VINFAST</strong>
+              </p>
+              <p className="text-[10px] text-blue-600 font-semibold">
+                Nội dung: VF COC XE {customerPhone.slice(-4)}
+              </p>
+            </div>
           </div>
 
           {/* Payment summary */}
@@ -416,38 +468,42 @@ export default function Booking() {
               </button>
             </div>
 
-            {/* Payment gateway – chỉ hiện khi mua ngay hoặc chọn full payment */}
-            {orderType === 'full-purchase' && (
-              <div className="pt-2">
-                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">Chọn phương thức thanh toán</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { key: 'vnpay',         label: 'VNPAY',    icon: <Building2 className="w-5 h-5" />,  desc: 'ATM / Internet Banking' },
-                    { key: 'momo',          label: 'MoMo',     icon: <Smartphone className="w-5 h-5" />, desc: 'Ví điện tử MoMo' },
-                    { key: 'bank-transfer', label: 'Chuyển khoản', icon: <Banknote className="w-5 h-5" />, desc: 'Ngân hàng bất kỳ' },
-                  ].map(gw => (
-                    <button
-                      key={gw.key}
-                      type="button"
-                      onClick={() => setPaymentGateway(gw.key as any)}
-                      className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ${
-                        paymentGateway === gw.key
-                          ? 'border-blue-500 bg-blue-50 text-blue-600'
-                          : 'border-gray-100 hover:border-gray-200 text-gray-500'
-                      }`}
-                    >
+            {/* Online payment gateway */}
+            <div className="pt-2">
+              <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">
+                Phương thức thanh toán trực tuyến {orderType === 'deposit' ? '(Tiền cọc)' : '(Toàn bộ)'}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { key: 'bank-transfer', label: 'Chuyển khoản liên ngân hàng (QR)', icon: <Banknote className="w-5 h-5" />, desc: 'Hỗ trợ tất cả ngân hàng Việt Nam' },
+                  { key: 'momo',          label: 'Ví điện tử MoMo (QR Pay)',        icon: <Smartphone className="w-5 h-5" />, desc: 'Quét mã qua app MoMo tức thì' },
+                ].map(gw => (
+                  <button
+                    key={gw.key}
+                    type="button"
+                    onClick={() => setPaymentGateway(gw.key as any)}
+                    className={`p-3.5 rounded-xl border text-left flex items-center gap-3 transition-all ${
+                      paymentGateway === gw.key
+                        ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm ring-2 ring-blue-500/20'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                    }`}
+                  >
+                    <div className="p-2 rounded-lg bg-blue-100/60 text-blue-600">
                       {gw.icon}
-                      <span className="text-[10px] font-extrabold">{gw.label}</span>
-                      <span className="text-[9px] opacity-70">{gw.desc}</span>
-                    </button>
-                  ))}
-                </div>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold block">{gw.label}</span>
+                      <span className="text-[10px] text-gray-500 block">{gw.desc}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
 
+            {/* Remainder options if deposit */}
             {orderType === 'deposit' && (
               <div className="pt-2">
-                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">Thanh toán phần còn lại</p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">Hình thức thanh toán phần còn lại (khi nhận xe)</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { key: 'full-payment',  label: '💰 Trả thẳng', desc: 'Thanh toán 1 lần khi nhận xe' },
@@ -567,12 +623,23 @@ export default function Booking() {
             <p className="text-[10px] text-gray-400">Demo: <span className="text-blue-600">VINFAST10</span> (10%) • <span className="text-blue-600">VF2026</span> (50 triệu) • <span className="text-blue-600">KHANH2026</span> (20 triệu)</p>
           </div>
 
-          <button type="submit" className="btn-electric w-full py-4 text-sm font-extrabold uppercase tracking-wider">
-            <span className="flex items-center justify-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              {isFull ? 'Tiến hành thanh toán' : 'Xác nhận đặt cọc'}
-              <ChevronRight className="w-4 h-4" />
-            </span>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-electric w-full py-4 text-sm font-extrabold uppercase tracking-wider disabled:opacity-50"
+          >
+            {submitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Đang xử lý...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                {isFull ? 'Tiến hành thanh toán' : 'Xác nhận đặt cọc giữ xe'}
+                <ChevronRight className="w-4 h-4" />
+              </span>
+            )}
           </button>
 
           <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1">

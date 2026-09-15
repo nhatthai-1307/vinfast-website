@@ -18,7 +18,21 @@
     color: #1A1D23;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    cursor: default;
   }
+
+  /* Ẩn hoàn toàn dấu nháy con trỏ văn bản (caret) khi bấm vào chữ/thẻ trên toàn trang */
+  *:not(input):not(textarea):not([contenteditable="true"]) {
+    caret-color: transparent !important;
+  }
+
+  /* Cho phép chọn text & hiện dấu nháy chuẩn trong ô nhập liệu */
+  input, textarea, [contenteditable="true"] {
+    cursor: text;
+    user-select: text;
+    caret-color: #2563eb !important;
+  }
+  select { cursor: pointer; }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: #EAECF3; }
